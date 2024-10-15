@@ -3,10 +3,11 @@ from workstation.core.registry import encode
 from workstation.aggregate import Loaders, Aggregate
 from workstation.publisher import Publisher
 from workstation.repository import Repository
+from workstation.remote.schemas import Model
 from workstation.core.registry import serialize
 
 class Session:
-    def __init__(self, aggregate: Aggregate, loaders: Loaders, publisher: Publisher = None, repository: Repository | None = None):
+    def __init__(self, model: Model, aggregate: Aggregate, loaders: Loaders, publisher: Publisher = None, repository: Repository | None = None):
         self.aggregate = aggregate
         self.loaders = loaders
         self.start = None
@@ -14,6 +15,7 @@ class Session:
         self.publisher = publisher or Publisher()
         self.repository = repository
         self.epochs = 0
+        self.model = model
         
     def begin(self):
         self.start = datetime.now()
