@@ -26,8 +26,8 @@ class Repository(ABC):
     criterions: Optional[Registry[Criterion]]
     optimizers: Optional[Registry[Optimizer]]
     loaders: Loaders
-    compiler: Compiler
     storage: Storage
+    compiler: Compiler
 
     @abstractmethod
     def store(self, aggregate: Aggregate) -> None: ...

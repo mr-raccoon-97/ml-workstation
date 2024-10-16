@@ -10,7 +10,6 @@ class Registry[T](ABC):
     @abstractmethod
     def register(self, type: type[T]) -> type[T]: ...
 
-
 class Aggregate(Protocol):
     id: Any
     epoch: int

@@ -1,15 +1,14 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-
 class RabbitMQSettings(BaseSettings):
     host: str = Field(default='localhost')
     port: int = Field(default=5672)
+    exchange: str = Field(default='')
     
     @property
     def uri(self) -> str:
         return f'amqp://{self.host}:{self.port}'
-    
 
 class BackendSettings(BaseSettings):
     host: str = Field(default='localhost')

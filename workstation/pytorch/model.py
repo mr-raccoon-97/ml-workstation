@@ -12,11 +12,14 @@ class Aggregate(Module):
         super().__init__()
         self.settings = settings or Settings()
         self.device = self.settings.model.device
-        self.epoch = 0
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
+        self.epoch = 0
     
+    def forward(self, input: Tensor) -> tuple[Tensor, float]:
+        return self.model(input)
+
     @property
     def phase(self) -> Literal['train', 'evaluation']:
         return 'train' if self.training else 'evaluation'
@@ -41,15 +44,18 @@ class Aggregate(Module):
         output = self.model(input)
         loss = self.loss(output, target)
         return output, loss.item()
-
-    def forward(self, input: Tensor, target: Tensor) -> tuple[Tensor, float]:
-        return self.fit(input, target) if self.training else self.evaluate(input, target)
     
     def iterate(self, loader: Loader, callback: Callback):
         callback.epoch = self.epoch
         callback.phase = self.phase
-        for batch, (input, target) in enumerate(loader, start=1):
-            input, target = input.to(self.device), target.to(self.device)
-            output, loss = self(input, target)
-            callback(batch, input, output, target, loss)
+        if self.training:
+            for batch, (input, target) in enumerate(loader, start=1):
+                input, target = input.to(self.device), target.to(self.device)
+                output, loss = self.fit(input, target)
+                callback(batch, input, output, target, loss)
+        else:
+            for batch, (input, target) in enumerate(loader, start=1):
+                input, target = input.to(self.device), target.to(self.device)
+                output, loss = self.evaluate(input, target)
+                callback(batch, input, output, target, loss)
         callback.flush()

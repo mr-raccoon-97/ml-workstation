@@ -4,13 +4,13 @@ from typing import Callable
 
 class Consumer(ABC):
     def __init__(self):
-        self.handlers = dict[str, list[Callable]]()
+        self.handlers = dict[type, list[Callable]]()
 
-    def subscribe(self, topic: str, handler: Callable):
-        self.handlers.setdefault(topic, []).append(handler)
+    def subscribe(self, message_type: type, handler: Callable):
+        self.handlers.setdefault(message_type, []).append(handler)
 
-    def consume(self, topic: str, message: Any):
-        for handler in self.handlers.get(topic, []):
+    def consume(self, message: Any):
+        for handler in self.handlers.get(type(message), []):
             handler(message)
 
     @abstractmethod
@@ -27,14 +27,14 @@ class Consumer(ABC):
 
 
 class Publisher:
-    def __init__(self):
-        self.consumers = list[Consumer]()
+    def __init__(self, consumers: list[Consumer] = None):
+        self.consumers = consumers or []
 
     def subscribe(self, consumer: Consumer):
         self.consumers.append(consumer)
 
-    def publish(self, topic: str, message: Any):
-        [consumer.consume(topic, message) for consumer in self.consumers]
+    def publish(self, message: Any):
+        [consumer.consume(message) for consumer in self.consumers]
 
     def begin(self):
         [consumer.begin() for consumer in self.consumers]

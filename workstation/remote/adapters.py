@@ -1,13 +1,23 @@
 from uuid import UUID
 from requests import get, post, delete
 from typing import Optional
-
-from workstation.remote.schemas import Experiment
+from dataclasses import dataclass
+from msgspec.json import encode
 from workstation.remote.settings import Settings
-from workstation.protocols import Module
-from workstation.core.registry import serialize
-from workstation.remote.schemas import Model, Experiment
 
+@dataclass
+class Experiment:
+    id: UUID
+    name: str
+
+@dataclass
+class Model:
+    id: UUID
+    hash: str
+    name: str
+    args: tuple
+    kwargs: dict
+    epochs: int
 
 class Experiments:
 
@@ -18,15 +28,8 @@ class Experiments:
         response = post(f'{self.settings.backend.uri}/experiments/', json={'name': name})
         response.raise_for_status()
         return Experiment(**response.json())
-
-    def get(self, id: UUID) -> Optional[Experiment]:
-        response = get(f'{self.settings.backend.uri}/experiments/{id}')
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        return Experiment(**response.json())
     
-    def get_by_name(self, name: str) -> Optional[Experiment]:
+    def get(self, name: str) -> Optional[Experiment]:
         response = get(f'{self.settings.backend.uri}/experiments?name={name}')
         if response.status_code == 404:
             return None
@@ -42,29 +45,21 @@ class Experiments:
         response = delete(f'{self.settings.backend.uri}/experiments/{experiment.id}/')
         response.raise_for_status()
 
-
+    
 class Models:
+    
     def __init__(self, experiment: Experiment, settings: Settings | None = None):
         self.settings = settings or Settings()
-        self.experiment = experiment
+        self.experiment = experiment    
 
-    def create(self, model: Module) -> Model:
-        response = post(f'{self.settings.backend.uri}/experiments/{self.experiment.id}/models/', data=serialize(model))
+    def create(self, model: Model) -> Model:
+        response = post(f'{self.settings.backend.uri}/experiments/{self.experiment.id}/models/', data=encode(model))
         response.raise_for_status()
         return Model(**response.json())
-    
-    def list(self) -> list[Model]:
-        response = get(f'{self.settings.backend.uri}/experiments/{self.experiment.id}/models/')
-        response.raise_for_status()
-        return [Model(**model) for model in response.json()]
 
-    def get(self, id: UUID) -> Optional[Model]:
-        response = get(f'{self.settings.backend.uri}/models/{id}/')
+    def get(self, hash: str) -> Optional[Model]:
+        response = get(f'{self.settings.backend.uri}/experiments/{self.experiment.id}/models/{hash}/')
         if response.status_code == 404:
             return None
         response.raise_for_status()
         return Model(**response.json())
-    
-    def remove(self, model: Model):
-        response = delete(f'{self.settings.backend.uri}/models/{model.id}/')
-        response.raise_for_status()

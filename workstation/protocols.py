@@ -9,20 +9,21 @@ class Tensor(Protocol):
 
 
 class Module(Protocol):
-    ...
+    metadata: dict[str, Any]
 
 class Criterion(Protocol):
-    ...
+    metadata: dict[str, Any]
 
 
 class Optimizer(Protocol):
-    ...
+    metadata: dict[str, Any]
 
 
 class Dataset(Protocol):
-    ...
+    metadata: dict[str, Any]
 
 class Loader(Protocol):
+    metadata: dict[str, Any]
     dataset: Dataset
     
     def __iter__(self) -> Iterator[Any]: ...

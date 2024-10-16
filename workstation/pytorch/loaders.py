@@ -3,7 +3,7 @@ from typing import Literal
 from workstation.protocols import Dataset
 from workstation.aggregate import Loaders as Base
 from workstation.pytorch.settings import Settings
-from workstation.core.registry import Registry, register_loader
+from workstation.registry import Registry, register_loader
 from workstation.pytorch.logging import on_loader_creation
 from torch.utils.data import DataLoader as _DataLoader
 

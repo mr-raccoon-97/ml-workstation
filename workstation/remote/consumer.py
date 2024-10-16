@@ -1,59 +1,81 @@
 from logging import getLogger
 from pika import BasicProperties
 from pika import BlockingConnection, ConnectionParameters
-from pika.channel import Channel
 from pika.connection import Connection
-
+from msgspec.json import encode
 from workstation.publisher import Consumer as Base
-from workstation.remote.schemas import Metric, Session, Model
+from workstation.signals import Metric, Model, Transaction
+from workstation.remote.adapters import Experiments, Models
 from workstation.remote.settings import Settings
-from workstation.core.registry import encode
 
 logger = getLogger(__name__)
 
-def handle_model(model: Model, channel: Channel, settings: Settings):
-    channel.basic_publish(
-        exchange='',
-        routing_key='models',
-        body=encode(model)
-    )
-
-def handle_metric(metric: Metric, model: Model, channel: Channel, settings: Settings):
-    channel.basic_publish(
-        exchange='',
-        routing_key='metrics',
-        body=encode(metric),
-        properties=BasicProperties(
-            headers={
-                'X-Resource-ID': str(model.id)
-            }
-        )
-    )
-
-def handle_session(session: Session, model: Model, channel: Channel, settings: Settings):
-    channel.basic_publish(
-        exchange='',
-        routing_key='sessions',
-        body=encode(session),
-        properties=BasicProperties(
-            headers={
-                'X-Resource-ID': str(model.id)
-            }
-        )
-    )
-
 class Consumer(Base):
-    def __init__(self, model: Model, connection: Connection, settings: Settings = None):
+    def __init__(self, connection: Connection, settings: Settings = None):
         super().__init__()
         self.connection = connection
         self.settings = settings or Settings()
-        self.model = model
+        self.experiments = Experiments(self.settings)
+        self.subscribe(Model, self.handle_model)
+        self.subscribe(Metric, self.handle_metric)
+        self.subscribe(Transaction, self.handle_transaction)
+        self.subscribe(Transaction, self.update_model)
+
+    def name(self, experiment_name: str):
+        self.experiment = self.experiments.get(experiment_name)
+        if not self.experiment:
+            self.experiment = self.experiments.create(experiment_name)
+        self.models = Models(self.experiment, self.settings)
+
+    def handle_model(self, model: Model):
+        self.model = self.models.get(model.hash)
+        if not self.model:
+            self.model = self.models.create(model)
+        else:
+            model.epochs = self.model.epochs        
+
+    def handle_metric(self, metric: Metric):
+        assert self.model is not None
+        self.channel.basic_publish(
+            exchange=self.settings.rabbitmq.exchange,
+            routing_key='metrics',
+            body=encode(metric),
+            properties=BasicProperties(
+                headers={
+                    'X-Resource-ID': self.model.id,
+                }
+            )
+        )
+
+    def handle_transaction(self, transaction: Transaction):
+        assert self.model is not None        
+        self.channel.basic_publish(
+            exchange=self.settings.rabbitmq.exchange,
+            routing_key='transaction',
+            body=encode(transaction),
+            properties=BasicProperties(
+                headers={
+                    'X-Resource-ID': self.model.id,
+                }
+            )
+        )
+
+    def update_model(self, transaction: Transaction):
+        assert self.model is not None
+        self.model.epochs += transaction.epochs[1] - transaction.epochs[0]
+        self.channel.basic_publish(
+            exchange=self.settings.rabbitmq.exchange,
+            routing_key='models',
+            body=encode(self.model),
+            properties=BasicProperties(
+                headers={
+                    'X-Resource-ID': self.experiment.id,
+                }
+            )
+        )
 
     def begin(self):
         self.channel = self.connection.channel()
-        self.subscribe('model', lambda model: handle_model(model, self.channel, self.settings))
-        self.subscribe('metric', lambda metric: handle_metric(metric, self.model, self.channel, self.settings))
-        self.subscribe('session', lambda session: handle_session(session, self.model, self.channel, self.settings))
         self.channel.tx_select()
 
     def commit(self):
@@ -67,7 +89,6 @@ class Consumer(Base):
     def close(self):
         self.channel.close()
         logger.info('--- Closing RabbitMQ Publisher Transaction ---')
-        self.handlers.clear()
 
 
 class RabbitMQ:
@@ -82,3 +103,10 @@ class RabbitMQ:
     
     def close(self):
         self.connection.close()
+
+    def __enter__(self):
+        self.connect()
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()

@@ -20,14 +20,20 @@ def on_restoring(module: Module, location: str):
         raise FileNotFoundError(f'WEIGHTS NOT FOUND ON {location}')
     
 def on_loader_creation(dataset: Dataset):
-    logger.info(f'*** Creating loader for dataset {dataset.metadata["name"]}')
-    logger.info(f'--- With lenght: {len(dataset)}')
+    try:
+        logger.info(f'*** Creating loader for dataset {dataset.metadata["name"]}')
+        logger.info(f'--- With lenght: {len(dataset)}')
+    except AttributeError:
+        logger.warning(f'--- The dataset is not registered')
 
 def on_compiling(model: Module, criterion: Criterion, optimizer: Optimizer):
     logger.info(f'*** Compiling')
-    logger.info(f'--- With Model: {model.metadata["name"]}')
-    logger.info(f'--- With Criterion: {criterion.metadata["name"]}')
-    logger.info(f'--- With Optimizer: {optimizer.metadata["name"]}')
+    try:
+        logger.info(f'--- With Model: {model.metadata["name"]}')
+        logger.info(f'--- With Criterion: {criterion.metadata["name"]}')
+        logger.info(f'--- With Optimizer: {optimizer.metadata["name"]}')
+    except AttributeError:
+        logger.warning(f'--- The model is not registered')
 
 def on_compiled(aggregate: Aggregate):
     logger.info(f'*** Model compiled successfully')

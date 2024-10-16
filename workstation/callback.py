@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Any
 from workstation.publisher import Publisher
+from workstation.defaults.consumer import Consumer as Default
 
 class Handler(ABC):
-    def __init__(self, publisher: Publisher):
-        self.publisher = publisher
+    def __init__(self, publisher: Publisher = None):
+        self.publisher = publisher or Publisher([Default()])
         self.epoch = 0
         self.phase = None        
 
