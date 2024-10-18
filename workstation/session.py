@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from workstation.aggregate import Aggregate, Loaders
 from workstation.repository import Repository
 from workstation.publisher import Publisher
@@ -11,26 +12,33 @@ class Session:
         self.aggregate = aggregate
         self.loaders = loaders
         self.repository = repository
-        self.epoch = aggregate.epoch
         self.publisher = publisher
-    
+        self.model = Model.create(self.aggregate)
+
     def begin(self):
         self.transaction = Transaction.create(self.aggregate, self.loaders)
-        if self.repository:
-            self.repository.store(self.aggregate)
         if self.publisher:
             self.publisher.begin()
-            self.publisher.publish(Model.create(self.aggregate))
+            self.publisher.publish(self.model)
+            self.aggregate.epoch = self.model.epochs
 
+        if self.repository:
+            if self.aggregate.epoch == 0:
+                self.repository.store(self.aggregate)
+            else:
+                self.repository.restore(self.aggregate)
+
+                
     def rollback(self):
+        self.aggregate.epoch = self.model.epochs
         self.transaction = None
         if self.repository:
             self.repository.restore(self.aggregate)
-        self.aggregate.epoch = self.epoch
 
     def commit(self):
-        self.transaction.epochs = (self.epoch, self.aggregate.epoch)
-        self.epoch = self.aggregate.epoch
+        self.transaction.end = datetime.now(timezone.utc)
+        self.transaction.epochs = (self.model.epochs, self.aggregate.epoch)
+        self.model.epochs = self.aggregate.epoch
         if self.publisher:
             self.publisher.publish(self.transaction)
             self.publisher.commit()

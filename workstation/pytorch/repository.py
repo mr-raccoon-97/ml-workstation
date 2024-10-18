@@ -12,12 +12,12 @@ class Repository(Base):
     optimizers = Registry(excluded_positions=[0], exclude_parameters={'params'})
     datasets = Registry(exclude_parameters={'root', 'download'})
 
-    def __init__(self, settings: Settings = None):
+    def __init__(self, experiment_name: str = None, settings: Settings = None):
         self.settings = settings or Settings()
         self.storage = Storage(self.settings)
         self.compiler = Compiler(self.settings)
         self.loaders = Loaders(self.settings)
-        self.folder = 'default'
+        self.folder = experiment_name or 'default'
 
     def store(self, aggregate: Aggregate):
         self.storage.models.store(aggregate.model, self.folder)

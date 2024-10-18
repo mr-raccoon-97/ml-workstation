@@ -3,7 +3,7 @@ from typing import Callable
 from collections import deque
 from logging import getLogger
 from workstation.publisher import Consumer as Base
-from workstation.signals import Metric, Transaction
+from workstation.signals import Metric, Model, Transaction
 
 logger = getLogger(__name__)
 
@@ -15,18 +15,29 @@ def log_metric(metric: Metric):
     logger.info(f'--- Publishing metric {metric.name}')
     logger.info(f'--- --- Batches: {metric.batch} ::: Value: {metric.value}')
     logger.info(f'-----------------------------------------------------------')
+    
+def handle_transaction(transaction: Transaction, transactions: list[Transaction], model: Model):
+    logger.info(f'*** End of transaction {transaction} ***')
+    transactions.append(transaction)
 
-def handle_session(transaction: Transaction):
-    logger.info(f'*** End of transaction ***')
+def update_model(transaction: Transaction, model: Model):
+    logger.info(f'*** Updating model with epochs {model.epochs} ***')
+    
 
 class Consumer(Base):
     def __init__(self):
         super().__init__()
         self.buffer = deque[Metric]()
         self.history = list[Metric]()
-        self.subscribe('metric', lambda metric: handle_metric(metric, self.buffer))
-        self.subscribe('metric', log_metric)
-        self.subscribe('session', handle_session)
+        self.transactions = list[Transaction]()
+        self.subscribe(Metric, lambda metric: handle_metric(metric, self.buffer))
+        self.subscribe(Metric, log_metric)
+        self.subscribe(Model, self.handle_model)
+        self.subscribe(Transaction, lambda transaction: handle_transaction(transaction, self.transactions, self.model))
+        self.subscribe(Transaction, lambda transaction: update_model(transaction, self.model))
+
+    def handle_model(self, model: Model):
+        self.model = model
 
     def begin(self):
         logger.info('*** Starting publisher')

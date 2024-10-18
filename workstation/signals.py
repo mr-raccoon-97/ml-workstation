@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 from dataclasses import dataclass
 from datetime import datetime
+from copy import deepcopy
 from workstation.aggregate import Aggregate, Loader, Loaders
 
 class Signal: ...
@@ -25,13 +26,14 @@ class Model(Signal):
 
     @staticmethod
     def create(aggregate: Aggregate):
-        return Model(
+        model = Model(
             hash=aggregate.model.metadata['hash'],
             name=aggregate.model.metadata['name'],
             args=aggregate.model.metadata['args'],
             kwargs=aggregate.model.metadata['kwargs'],
             epochs=aggregate.epoch
         )
+        return deepcopy(model)
 
 @dataclass
 class Criterion(Signal):
@@ -42,12 +44,14 @@ class Criterion(Signal):
 
     @staticmethod
     def create(aggregate: Aggregate):
-        return Criterion(
-            hash=aggregate.criterion.metadata['hash'],
-            name=aggregate.criterion.metadata['name'],
-            args=aggregate.criterion.metadata['args'],
-            kwargs=aggregate.criterion.metadata['kwargs']
-        ) if aggregate.criterion else None
+        if aggregate.criterion:
+            criterion = Criterion(
+                hash=aggregate.criterion.metadata['hash'],
+                name=aggregate.criterion.metadata['name'],
+                args=aggregate.criterion.metadata['args'],
+                kwargs=aggregate.criterion.metadata['kwargs']
+            )
+        return deepcopy(criterion) if criterion else None
 
 
 @dataclass
@@ -59,12 +63,14 @@ class Optimizer(Signal):
 
     @staticmethod
     def create(aggregate: Aggregate):
-        return Optimizer(
-            hash=aggregate.optimizer.metadata['hash'],
-            name=aggregate.optimizer.metadata['name'],
-            args=aggregate.optimizer.metadata['args'],
-            kwargs=aggregate.optimizer.metadata['kwargs']
-        ) if aggregate.optimizer else None
+        if aggregate.optimizer:
+            optimizer = Optimizer(
+                hash=aggregate.optimizer.metadata['hash'],
+                name=aggregate.optimizer.metadata['name'],
+                args=aggregate.optimizer.metadata['args'],
+                kwargs=aggregate.optimizer.metadata['kwargs']
+            ) 
+        return deepcopy(optimizer) if optimizer else None
 
 @dataclass
 class Dataset(Signal):
@@ -75,12 +81,13 @@ class Dataset(Signal):
 
     @staticmethod
     def create(loader: Loader):
-        return Dataset(
+        loader = Dataset(
             hash=loader.metadata['dataset']['hash'],
             name=loader.metadata['dataset']['name'],
             args=loader.metadata['dataset']['args'],
             kwargs=loader.metadata['dataset']['kwargs']
         )
+        return deepcopy(loader)
 
 @dataclass
 class Iteration(Signal):
@@ -93,14 +100,14 @@ class Iteration(Signal):
         return Iteration(
             phase=phase,
             dataset=Dataset.create(loader),
-            kwargs=loader.metadata['loader']['kwargs']
+            kwargs=loader.metadata['kwargs']
         )
 
 @dataclass
 class Transaction(Signal):
     epochs: tuple[int, int]
-    duration: tuple[datetime, datetime]
-    model: Model
+    start: datetime
+    end: datetime
     criterion: Optional[Criterion]
     optimizer: Optional[Optimizer]
     iterations: list[Iteration]
@@ -108,9 +115,9 @@ class Transaction(Signal):
     @staticmethod
     def create(aggregate: Aggregate, loaders: Loaders):
         return Transaction(
-            epochs=(aggregate.epoch, aggregate.epoch),
-            duration=(datetime.now(), datetime.now()),
-            model=Model.create(aggregate),
+            epochs=None,
+            start=datetime.now(),
+            end=None,
             criterion=Criterion.create(aggregate),
             optimizer=Optimizer.create(aggregate),
             iterations=[Iteration.create(phase, loader) for phase, loader in loaders]
