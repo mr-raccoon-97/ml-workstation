@@ -4,7 +4,6 @@ from typing import Optional
 from workstation.protocols import Module, Criterion, Optimizer, Dataset
 from workstation.aggregate import Aggregate, Registry, Compiler, Loaders
 
-
 class Weights[T: Module](ABC):
 
     @abstractmethod

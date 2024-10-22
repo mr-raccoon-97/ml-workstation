@@ -3,7 +3,7 @@ from torch import Tensor, argmax
 
 from workstation.callback import Handler, Callback
 from workstation.publisher import Publisher
-from workstation.signals import Metric
+from workstation.messages import Metric
 from workstation.pytorch.logging import on_call
 
 class _Average:
@@ -26,8 +26,8 @@ def predictions(output: Tensor) -> Tensor:
 
 
 class Loss(Handler):
-    def __init__(self, publisher: Publisher = None):
-        super().__init__(publisher)
+    def __init__(self):
+        super().__init__()
         self.average = _Average()
 
     def __call__(self, batch: int, input: Tensor, output: Tensor, target: Tensor, loss: float):
@@ -44,8 +44,8 @@ class Loss(Handler):
         
 
 class Accuracy(Handler):
-    def __init__(self, publisher: Publisher = None):
-        super().__init__(publisher)
+    def __init__(self):
+        super().__init__()
         self.average = _Average()
 
     def __call__(self, batch: int, input: Tensor, output: Tensor, target: Tensor, loss: float):

@@ -13,6 +13,7 @@ class Experiment:
 @dataclass
 class Model:
     id: UUID
+    signature: UUID
     hash: str
     name: str
     args: tuple

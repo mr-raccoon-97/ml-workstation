@@ -18,7 +18,6 @@ def select(activation: str) -> Module:
 class MLP(Module):
     def __init__(self, input_dimension: int, hidden_dimension: int, output_dimension: int, p: float, activation: str):
         super().__init__()
-        self.flatten = Flatten(start_dim=1)
         self.activation = select(activation)
         self.dropout = Dropout(p)
         self.input_layer = Linear(input_dimension, hidden_dimension)
@@ -33,8 +32,8 @@ class MLP(Module):
 class GLU(Module):
     def __init__(self, input_dimension: int, hidden_dimension: int, output_dimension: int, p: float, activation: str):
         super().__init__()
-        self.hidden_dimension = int(hidden_dimension * 2 / 3)
         self.activation = select(activation)
+        self.hidden_dimension = int(hidden_dimension * 2 / 3)
         self.dropout = Dropout(p)
         self.input_layer = Linear(input_dimension, 2* self.hidden_dimension)
         self.output_layer = Linear(self.hidden_dimension, output_dimension)

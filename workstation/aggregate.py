@@ -4,11 +4,7 @@ from typing import Protocol, Callable, Iterator
 from typing import Optional
 from abc import ABC, abstractmethod
 from workstation.protocols import Callback, Module, Criterion, Optimizer, Tensor, Loader
-
-class Registry[T](ABC):
-
-    @abstractmethod
-    def register(self, type: type[T]) -> type[T]: ...
+from workstation.registry import Registry   
 
 class Aggregate(Protocol):
     id: Any

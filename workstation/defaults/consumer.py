@@ -3,7 +3,7 @@ from typing import Callable
 from collections import deque
 from logging import getLogger
 from workstation.publisher import Consumer as Base
-from workstation.signals import Metric, Model, Transaction
+from workstation.messages import Metric, Model, Transaction
 
 logger = getLogger(__name__)
 

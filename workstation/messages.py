@@ -6,10 +6,10 @@ from datetime import datetime
 from copy import deepcopy
 from workstation.aggregate import Aggregate, Loader, Loaders
 
-class Signal: ...
+class Message: ...
 
 @dataclass
-class Metric(Signal):
+class Metric(Message):
     name: str
     phase: str
     batch: int
@@ -17,7 +17,8 @@ class Metric(Signal):
     value: float
 
 @dataclass
-class Model(Signal):
+class Model(Message):
+    signature: UUID
     hash: str
     name: str
     args: tuple
@@ -27,6 +28,7 @@ class Model(Signal):
     @staticmethod
     def create(aggregate: Aggregate):
         model = Model(
+            signature=aggregate.model.metadata['signature'],
             hash=aggregate.model.metadata['hash'],
             name=aggregate.model.metadata['name'],
             args=aggregate.model.metadata['args'],
@@ -36,7 +38,8 @@ class Model(Signal):
         return deepcopy(model)
 
 @dataclass
-class Criterion(Signal):
+class Criterion(Message):
+    signature: UUID
     hash: str
     name: str
     args: tuple
@@ -46,6 +49,7 @@ class Criterion(Signal):
     def create(aggregate: Aggregate):
         if aggregate.criterion:
             criterion = Criterion(
+                signature=aggregate.criterion.metadata['signature'],
                 hash=aggregate.criterion.metadata['hash'],
                 name=aggregate.criterion.metadata['name'],
                 args=aggregate.criterion.metadata['args'],
@@ -55,7 +59,8 @@ class Criterion(Signal):
 
 
 @dataclass
-class Optimizer(Signal):
+class Optimizer(Message):
+    signature: UUID
     hash: str
     name: str
     args: tuple
@@ -65,6 +70,7 @@ class Optimizer(Signal):
     def create(aggregate: Aggregate):
         if aggregate.optimizer:
             optimizer = Optimizer(
+                signature=aggregate.optimizer.metadata['signature'],
                 hash=aggregate.optimizer.metadata['hash'],
                 name=aggregate.optimizer.metadata['name'],
                 args=aggregate.optimizer.metadata['args'],
@@ -73,7 +79,8 @@ class Optimizer(Signal):
         return deepcopy(optimizer) if optimizer else None
 
 @dataclass
-class Dataset(Signal):
+class Dataset(Message):
+    signature: UUID
     hash: str
     name: str
     args: tuple
@@ -82,6 +89,7 @@ class Dataset(Signal):
     @staticmethod
     def create(loader: Loader):
         loader = Dataset(
+            signature=loader.metadata['signature'],
             hash=loader.metadata['dataset']['hash'],
             name=loader.metadata['dataset']['name'],
             args=loader.metadata['dataset']['args'],
@@ -90,7 +98,7 @@ class Dataset(Signal):
         return deepcopy(loader)
 
 @dataclass
-class Iteration(Signal):
+class Iteration(Message):
     phase: str
     dataset: Dataset
     kwargs: dict
@@ -104,7 +112,7 @@ class Iteration(Signal):
         )
 
 @dataclass
-class Transaction(Signal):
+class Transaction(Message):
     epochs: tuple[int, int]
     start: datetime
     end: datetime

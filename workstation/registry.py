@@ -4,6 +4,7 @@ from typing import Any
 from json import dumps
 from logging import getLogger
 from hashlib import md5
+from dataclasses import dataclass
 from workstation.protocols import Loader
 
 logger = getLogger(__name__)
@@ -15,7 +16,7 @@ def type_parameters(type: type, excluded_parameters: set[str]) -> dict[str, str]
     parameters = { key: annotations.get(key, Any.__name__)  for key in argspec.args if key not in excluded_parameters }    
     return parameters
 
-def type_identifier(type: type, excluded_parameters: set[str]) -> dict[str, str]:
+def type_identifier(type: type, excluded_parameters: set[str]) -> UUID:
     name = type.__name__
     name += dumps(type_parameters(type, excluded_parameters), sort_keys=True)
     return uuid3(NAMESPACE_DNS, name)
@@ -28,7 +29,7 @@ def object_hashing(object: object, args, kwargs, excluded_parameters: set[str]) 
     name += dumps(kwargs, sort_keys=True)
     return md5(name.encode()).hexdigest()
 
-class Registry[T: type]:
+class Registry[T]:
     def __init__(self, aditional_parameters: dict[str, Any] = None, exclude_parameters: set[str] = None, excluded_positions: list[int] = None):
         self.types = dict()
         self.states = dict()
@@ -36,17 +37,18 @@ class Registry[T: type]:
         self.aditional_parameters = aditional_parameters or dict()
         self.excluded_parameters = ( exclude_parameters or set[str]() ) | {'self', 'return'}
 
-    def register(self, type: T) -> T:
-        identifier, parameters = type_identifier(type, self.excluded_parameters), type_parameters(type, self.excluded_parameters)
-        self.types[type.__name__] = (type, parameters)
+    def register(self, type: type):
+        signature, parameters = type_identifier(type, self.excluded_parameters), type_parameters(type, self.excluded_parameters)
+        self.types[signature] = (type, parameters)
         init = type.__init__
 
         def wrapper(obj, *args, **kwargs):
             included_args = { arg for index, arg in enumerate(args) if index not in self.excluded_postitions }
             included_kwargs = { key: value for key, value in kwargs.items() if key not in self.excluded_parameters } | self.aditional_parameters
-            self.states[identifier] = (included_args, included_kwargs)
+            self.states[signature] = (included_args, included_kwargs)
             init(obj, *args, **kwargs)
             setattr(obj, 'metadata', {
+                'signature': signature,
                 'hash': object_hashing(obj, included_args, included_kwargs, self.excluded_parameters),
                 'name': type.__name__,
                 'args': included_args,
@@ -54,6 +56,14 @@ class Registry[T: type]:
             })
         type.__init__ = wrapper
         return type    
+
+    def get(self, signature: UUID) -> type[T]:
+        type, _ = self.types[signature]
+        return type
+    
+    def list(self) -> list[tuple[UUID, T, dict[str, str]]]:
+        return [ (signature, type.__name__, parameters) for signature, (type, parameters) in self.types.items() ]
+    
 
 def register_loader(phase: str, loader: Loader):
     try:

@@ -4,8 +4,8 @@ from workstation.publisher import Publisher
 from workstation.defaults.consumer import Consumer as Default
 
 class Handler(ABC):
-    def __init__(self, publisher: Publisher = None):
-        self.publisher = publisher or Publisher([Default()])
+    def __init__(self):
+        self.publisher = Publisher([Default()])
         self.epoch = 0
         self.phase = None        
 
@@ -24,6 +24,11 @@ class Callback:
         self.handlers = handlers or []
         self.epoch = 0
         self.phase = None
+        self.publisher = Publisher([Default()])
+
+    def bind(self, publisher: Publisher):
+        self.publisher = publisher
+        [setattr(handler, 'publisher', self.publisher) for handler in self.handlers]
     
     def __setattr__(self, name: str, value: Any) -> None:
         if name in ('epoch', 'phase'):
@@ -37,16 +42,22 @@ class Callback:
         [handler.flush() for handler in self.handlers]
 
     def reset(self):
+        self.epoch = 0
         [handler.reset() for handler in self.handlers]
+    
 
     def begin(self):
-        [handler.publisher.begin() for handler in self.handlers]
+        self.publisher.begin()
 
     def commit(self):
-        [handler.publisher.commit() for handler in self.handlers]
+        self.publisher.commit()
 
     def rollback(self):
-        [handler.publisher.rollback() for handler in self.handlers]
+        self.reset()
+        self.publisher.rollback()
 
     def close(self):
-        [handler.publisher.close() for handler in self.handlers]
+        self.publisher.close()
+
+    def deliver(self, message: Any):
+        self.publisher.publish(message)

@@ -11,6 +11,8 @@ class Tensor(Protocol):
 class Module(Protocol):
     metadata: dict[str, Any]
 
+    def parameters(self) -> Iterator[Tensor]: ...
+
 class Criterion(Protocol):
     metadata: dict[str, Any]
 

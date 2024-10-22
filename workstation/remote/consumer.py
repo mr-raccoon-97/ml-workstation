@@ -5,7 +5,7 @@ from pika.channel import Channel
 from pika.connection import Connection
 from msgspec.json import encode
 from workstation.publisher import Consumer as Base
-from workstation.signals import Metric, Model, Transaction
+from workstation.messages import Metric, Model, Transaction
 from workstation.remote.adapters import Experiments, Models
 from workstation.remote.settings import Settings
 

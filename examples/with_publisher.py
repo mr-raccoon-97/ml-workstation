@@ -1,7 +1,7 @@
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
-from models.perceptrons import MLP
-from datasets.mnist import Digits
+from examples.models.perceptrons import MLP
+from examples.datasets.mnist import Digits
 from workstation.pytorch import Repository, Loaders, Compiler
 from workstation.pytorch.callbacks import Callback, Accuracy, Loss
 from workstation.publisher import Publisher
@@ -29,11 +29,12 @@ loaders.add('train', Digits(train=True), batch_size=32, shuffle=True)
 loaders.add('test', Digits(train=False), batch_size=32, shuffle=False)
 
 publisher = Publisher([Consumer()])
-callback = Callback([Loss(publisher), Accuracy(publisher)])
+callback = Callback([Loss(), Accuracy()])
+callback.bind(publisher)
 
 classifier.epoch = 5
 
-with Session(classifier, loaders, repository, publisher):
+with Session(classifier, loaders, repository, callback):
     for epoch in range(5):
         classifier.epoch += 1
         for phase, loader in loaders:
@@ -42,7 +43,7 @@ with Session(classifier, loaders, repository, publisher):
 
 assert classifier.epoch == 10
 
-with Session(classifier, loaders, repository, publisher):
+with Session(classifier, loaders, repository, callback):
     for epoch in range(5):
         classifier.epoch += 1
         for phase, loader in loaders:
