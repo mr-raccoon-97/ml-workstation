@@ -19,9 +19,9 @@ class TrainModelTillEpoch(Command):
     checkpoint: int = None
 
     def execute(self, callback: Callback, repository: Repository):
-        model_type = repository.models.get(self.model.signature)
-        criterion_type = repository.criterions.get(self.criterion.signature)
-        optimizer_type = repository.optimizers.get(self.optimizer.signature)
+        model_type, _ = repository.models.get(self.model.signature)
+        criterion_type, _  = repository.criterions.get(self.criterion.signature)
+        optimizer_type, _  = repository.optimizers.get(self.optimizer.signature)
 
         model = model_type(*self.model.args, **self.model.kwargs)
         criterion = criterion_type(*self.criterion.args, **self.criterion.kwargs)

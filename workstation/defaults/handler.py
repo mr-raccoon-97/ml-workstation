@@ -1,7 +1,7 @@
 from logging import getLogger
 from workstation.protocols import Tensor
 from workstation.callback import Handler
-from workstation.core.schemas import Metric
+from workstation.messages import Metric
 from workstation.publisher import Publisher
 from workstation.defaults.consumer import Consumer as Default
 from logging import getLogger
@@ -26,8 +26,8 @@ class _Average:
 
 
 class Loss(Handler):
-    def __init__(self, publisher: Publisher | None = None):
-        super().__init__(publisher or Publisher([Default()]))
+    def __init__(self):
+        super().__init__()
         self.average = _Average()
 
     def __call__(self, batch: int, input: Tensor, output: Tensor, target: Tensor, loss: float):
