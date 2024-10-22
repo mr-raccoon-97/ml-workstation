@@ -29,6 +29,9 @@ class Callback:
     def bind(self, publisher: Publisher):
         self.publisher = publisher
         [setattr(handler, 'publisher', self.publisher) for handler in self.handlers]
+
+    def setup(self, name: str):
+        self.publisher.setup(name)
     
     def __setattr__(self, name: str, value: Any) -> None:
         if name in ('epoch', 'phase'):

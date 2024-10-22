@@ -14,6 +14,9 @@ class Consumer(ABC):
             handler(message)
 
     @abstractmethod
+    def setup(self, name: str): ...
+
+    @abstractmethod
     def begin(self): ...
 
     @abstractmethod
@@ -29,6 +32,9 @@ class Consumer(ABC):
 class Publisher:
     def __init__(self, consumers: list[Consumer] = None):
         self.consumers = consumers or []
+    
+    def setup(self, name: str):
+        [consumer.setup(name) for consumer in self.consumers]
 
     def subscribe(self, consumer: Consumer):
         self.consumers.append(consumer)

@@ -18,7 +18,7 @@ class Metric(Message):
 
 @dataclass
 class Model(Message):
-    signature: UUID
+    signature: dict
     hash: str
     name: str
     args: tuple
@@ -39,7 +39,7 @@ class Model(Message):
 
 @dataclass
 class Criterion(Message):
-    signature: UUID
+    signature: dict
     hash: str
     name: str
     args: tuple
@@ -60,7 +60,7 @@ class Criterion(Message):
 
 @dataclass
 class Optimizer(Message):
-    signature: UUID
+    signature: dict
     hash: str
     name: str
     args: tuple
@@ -80,7 +80,7 @@ class Optimizer(Message):
 
 @dataclass
 class Dataset(Message):
-    signature: UUID
+    signature: dict
     hash: str
     name: str
     args: tuple

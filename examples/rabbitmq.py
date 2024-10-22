@@ -31,11 +31,12 @@ loaders.add('test', Digits(train=False), batch_size=32, shuffle=False)
 
 with RabbitMQ() as broker:
     rabbitmq_consumer = broker.consumer
-    rabbitmq_consumer.setup(experiment_name='tests')
     in_memory_consumer = DefaultConsumer()
-    publisher = Publisher([rabbitmq_consumer])
-    callback = Callback([Loss(publisher), Accuracy(publisher)])
-    with Session(classifier, loaders, repository, publisher):
+    publisher = Publisher([rabbitmq_consumer, in_memory_consumer])
+
+    callback = Callback([Loss(), Accuracy()])
+    callback.bind(publisher)
+    with Session(classifier, loaders, repository, callback):
         for epoch in range(5):
             classifier.epoch += 1
             for phase, loader in loaders:

@@ -13,6 +13,7 @@ class Session:
         self.loaders = loaders
         self.repository = repository
         self.callback = callback
+        self.callback.setup(repository.folder)
         self.model = Model.create(self.aggregate)
 
     def begin(self):

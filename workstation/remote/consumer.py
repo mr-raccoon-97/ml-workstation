@@ -22,14 +22,14 @@ class Consumer(Base):
         self.subscribe(Transaction, self.handle_transaction)
         self.subscribe(Transaction, self.update_model)
 
-    def setup(self, experiment_name: str):
+    def setup(self, name: str):
         logger.info(f'*** Setting up experiment ---')
-        logger.info(f'--- Trying to retrieve experiment {experiment_name} ---')
-        self.experiment = self.experiments.get(experiment_name)
+        logger.info(f'--- Trying to retrieve experiment {name} ---')
+        self.experiment = self.experiments.get(name)
         if self.experiment is None:
-            logger.info(f'*** Experiment {experiment_name} not found ---')
+            logger.info(f'*** Experiment {name} not found ---')
             logger.info(f'--- Creating experiment one ... ---')
-            self.experiment = self.experiments.create(experiment_name)
+            self.experiment = self.experiments.create(name)
         self.models = Models(self.experiment, self.settings)
 
     def handle_model(self, model: Model):

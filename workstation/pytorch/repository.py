@@ -1,3 +1,4 @@
+from os import path
 from workstation.registry import Registry
 from workstation.repository import Repository as Base
 from workstation.pytorch.settings import Settings
@@ -13,18 +14,8 @@ class Repository(Base):
     datasets = Registry(exclude_parameters={'root', 'download'})
 
     def __init__(self, experiment_name: str = None, settings: Settings = None):
+        super().__init__(experiment_name or 'default')
         self.settings = settings or Settings()
         self.storage = Storage(self.settings)
         self.compiler = Compiler(self.settings)
         self.loaders = Loaders(self.settings)
-        self.folder = experiment_name or 'default'
-
-    def store(self, aggregate: Aggregate):
-        self.storage.models.store(aggregate.model, self.folder)
-        self.storage.optimizers.store(aggregate.optimizer, self.folder)
-        self.storage.criterions.store(aggregate.criterion, self.folder)
-
-    def restore(self, aggregate: Aggregate):
-        self.storage.models.restore(aggregate.model, self.folder)
-        self.storage.optimizers.restore(aggregate.optimizer, self.folder)
-        self.storage.criterions.restore(aggregate.criterion, self.folder)

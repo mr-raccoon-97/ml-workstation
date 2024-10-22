@@ -38,7 +38,6 @@ for hidden_dimension in [256, 512, 1024]:
 
                 with RabbitMQ() as broker:
                     rabbitmq_consumer = broker.consumer
-                    rabbitmq_consumer.setup(experiment_name='glu-perceptrons')
                     default_consumer = DefaultConsumer()
 
                     publisher = Publisher([rabbitmq_consumer, default_consumer])
@@ -46,7 +45,7 @@ for hidden_dimension in [256, 512, 1024]:
                     callback.bind(publisher)
 
                     with Session(classifier, loaders, repository, callback):
-                        while classifier.epoch < 5:
+                        while classifier.epoch < 3:
                             classifier.epoch += 1
                             for phase, loader in loaders:
                                 classifier.phase = phase

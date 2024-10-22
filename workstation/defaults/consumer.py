@@ -36,6 +36,9 @@ class Consumer(Base):
         self.subscribe(Transaction, lambda transaction: handle_transaction(transaction, self.transactions, self.model))
         self.subscribe(Transaction, lambda transaction: update_model(transaction, self.model))
 
+    def setup(self, name: str):
+        logger.info(f'*** Setting up consumer for experiment: {name}')
+
     def handle_model(self, model: Model):
         self.model = model
 
